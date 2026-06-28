@@ -1,4 +1,0 @@
-ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Global
-2026-06-27 21:55:11,Scotiabank Christian,Seguro,358.05,3,0,1,2026-07-01,38,358.05,111.41,20.62,132.03,246.64,38.05
-2026-06-27 21:55:11,Scotiabank Christian,Seguro,358.05,3,0,2,2026-08-01,31,246.64,120.5,11.53,132.03,126.14,38.05
-2026-06-27 21:55:11,Scotiabank Christian,Seguro,358.05,3,0,3,2026-09-01,31,126.14,126.14,5.9,132.04,0.0,38.05
