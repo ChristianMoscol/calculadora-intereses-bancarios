@@ -60,25 +60,29 @@ if check_password():
         desc_limpia = str(desc).replace(",", " ")
         tarjeta_limpia = str(tarjeta).replace(",", " ")
         
-        # Construimos el bloque de texto con todas las cuotas del cronograma
+        # Calculamos el total de intereses de este cálculo específico antes de escribir
+        total_intereses_calculo = sum(float(fila['Interés']) for fila in cronograma)
+        
+        # Construimos el bloque de texto
         nuevas_filas = ""
         for fila in cronograma:
             nuevas_filas += (
                 f"{fecha},{tarjeta_limpia},{desc_limpia},{monto},{cuotas},{diferido},"
                 f"{fila['N°']},{fila['Fecha Pago']},{fila['Días']},{fila['Saldo Inicial']},"
-                f"{fila['Amortización']},{fila['Interés']},{fila['Cuota Total']},{fila['Saldo Final']}\n"
+                f"{fila['Amortización']},{fila['Interés']},{fila['Cuota Total']},{fila['Saldo Final']},"
+                f"{total_intereses_calculo}\n" # <--- Aquí añadimos la nueva columna
             )
         
         try:
             contents = repo.get_contents("historial_calculos.csv")
             contenido_actual = contents.decoded_content.decode("utf-8")
             nuevo_contenido = contenido_actual + nuevas_filas
-            repo.update_file(contents.path, "Nuevo cronograma detallado registrado", nuevo_contenido, contents.sha)
+            repo.update_file(contents.path, "Actualizar historial con totales", nuevo_contenido, contents.sha)
         except Exception:
-            # Cabecera extendida con datos de auditoría individuales por cuota
-            cabecera = "ID_Calculo,Tarjeta,Descripcion_Compra,Monto_Total,Cuotas_Totales,Diferido_Totales,N_Cuota,Fecha_Pago,Dias,Saldo_Inicial,Amortizacion,Interes,Cuota_Total,Saldo_Final\n"
+            # Cabecera actualizada con la nueva columna
+            cabecera = "ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Global\n"
             nuevo_contenido = cabecera + nuevas_filas
-            repo.create_file("historial_calculos.csv", "Crear archivo historial detallado", nuevo_contenido)
+            repo.create_file("historial_calculos.csv", "Crear historial con totales", nuevo_contenido)
 
     tarjetas_db = cargar_tarjetas_github()
 
@@ -277,7 +281,7 @@ if check_password():
                 fecha_hora = fecha_hora_peru.strftime('%Y-%m-%d %H:%M:%S')
                 
                 # Enviamos el cronograma completo para que se desglose fila por fila con la hora de Perú
-                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, cronograma)
+                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, total_interes, cronograma)
             
             st.success("✅ ¡Cálculo completado!")
             st.divider()
