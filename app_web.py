@@ -56,33 +56,33 @@ if check_password():
             repo.create_file("config_tarjetas.json", "Crear config tarjetas", json.dumps(db, indent=4, ensure_ascii=False))
 
     # MODIFICADO: Ahora recibe la lista completa del cronograma y escribe fila por fila
-    def guardar_historial_github(fecha, tarjeta, desc, monto, cuotas, diferido, cronograma):
+    def guardar_historial_github(fecha, tarjeta, desc, monto, cuotas, diferido, tea, cronograma):
         desc_limpia = str(desc).replace(",", " ")
         tarjeta_limpia = str(tarjeta).replace(",", " ")
         
         # Calculamos el total de intereses de este cálculo específico antes de escribir
         total_intereses_calculo = sum(float(fila['Interés']) for fila in cronograma)
         
-        # Construimos el bloque de texto
+        # Construimos el bloque de texto incluyendo la TEA
         nuevas_filas = ""
         for fila in cronograma:
             nuevas_filas += (
-                f"{fecha},{tarjeta_limpia},{desc_limpia},{monto},{cuotas},{diferido},"
+                f"{fecha},{tarjeta_limpia},{desc_limpia},{monto},{cuotas},{diferido},{tea},"
                 f"{fila['N°']},{fila['Fecha Pago']},{fila['Días']},{fila['Saldo Inicial']},"
                 f"{fila['Amortización']},{fila['Interés']},{fila['Cuota Total']},{fila['Saldo Final']},"
-                f"{total_intereses_calculo}\n" # <--- Aquí añadimos la nueva columna
+                f"{total_intereses_calculo}\n"
             )
         
         try:
             contents = repo.get_contents("historial_calculos.csv")
             contenido_actual = contents.decoded_content.decode("utf-8")
             nuevo_contenido = contenido_actual + nuevas_filas
-            repo.update_file(contents.path, "Actualizar historial con totales", nuevo_contenido, contents.sha)
+            repo.update_file(contents.path, "Actualizar historial con TEA", nuevo_contenido, contents.sha)
         except Exception:
-            # Cabecera actualizada con la nueva columna
-            cabecera = "ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Operacion\n"
+            # Cabecera actualizada con la nueva columna Tasa_TEA
+            cabecera = "ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,Tasa_TEA,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Global\n"
             nuevo_contenido = cabecera + nuevas_filas
-            repo.create_file("historial_calculos.csv", "Crear historial con totales", nuevo_contenido)
+            repo.create_file("historial_calculos.csv", "Crear historial con TEA", nuevo_contenido)
 
     tarjetas_db = cargar_tarjetas_github()
 
