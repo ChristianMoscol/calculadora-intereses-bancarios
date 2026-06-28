@@ -172,7 +172,7 @@ if check_password():
             n_cierre = st.number_input("Día de Cierre", min_value=1, max_value=31, step=1, key="n_cie")
             n_pago = st.number_input("Día de Pago", min_value=1, max_value=31, step=1, key="n_pag")
             
-            if st.button("💾 Guardar Tarjeta en la Nube"):
+            if st.button("💾 Guardar Tarjeta"):
                 if n_nombre:
                     with st.spinner('Guardando...'):
                         tarjetas_db[n_nombre] = {"tea": n_tea, "cierre": n_cierre, "pago": n_pago}
