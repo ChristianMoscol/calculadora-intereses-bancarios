@@ -9,7 +9,7 @@ from github import Github
 st.set_page_config(page_title="Calculadora Bancaria", page_icon="💳", layout="wide")
 
 # --- SISTEMA DE SEGURIDAD Y NUBE ---
-CONTRASEÑA_SECRETA = "Kira2026"
+CONTRASEÑA_SECRETA = "Kira2020"
 REPO_NAME = "ChristianMoscol/calculadora-intereses-bancarios" # <--- ¡CAMBIA ESTO POR TU USUARIO Y REPOSITORIO!
 
 def check_password():
