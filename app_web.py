@@ -198,7 +198,7 @@ if check_password():
         dia_cierre = c7.number_input("Día de Cierre", min_value=0, max_value=31, value=def_cierre, disabled=bloqueado)
         dia_pago = c8.number_input("Día de Pago", min_value=0, max_value=31, value=def_pago, disabled=bloqueado)
 
-        btn_calcular = st.form_submit_button("📊 Generar Cronograma y Guardar Historial", type="primary", use_container_width=True)
+        btn_calcular = st.form_submit_button("📊 Generar Cronograma", type="primary", use_container_width=True)
 
     if btn_calcular:
         if monto <= 0 or cuotas <= 0 or tea < 0 or dia_cierre <= 0 or dia_pago <= 0:
@@ -258,7 +258,7 @@ if check_password():
                 fecha_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, round(total_interes, 2), round(total_cuotas, 2))
             
-            st.success("✅ ¡Cálculo completado y registrado en el Historial de la Nube!")
+            st.success("✅ ¡Cálculo completado!")
             st.divider()
             
             st.subheader("📋 Cronograma de Pagos")
