@@ -80,7 +80,7 @@ if check_password():
             repo.update_file(contents.path, "Actualizar historial con totales", nuevo_contenido, contents.sha)
         except Exception:
             # Cabecera actualizada con la nueva columna
-            cabecera = "ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Global\n"
+            cabecera = "ID_Calculo,Tarjeta,Descripcion,Monto,Cuotas,Diferido,N_Cuota,Fecha,Dias,Saldo_Inic,Amort,Interes,Cuota_Total,Saldo_Fin,Total_Interes_Operacion\n"
             nuevo_contenido = cabecera + nuevas_filas
             repo.create_file("historial_calculos.csv", "Crear historial con totales", nuevo_contenido)
 
