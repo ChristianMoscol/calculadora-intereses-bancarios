@@ -174,10 +174,10 @@ if check_password():
             
             if st.button("💾 Guardar Tarjeta en la Nube"):
                 if n_nombre:
-                    with st.spinner('Guardando en GitHub...'):
+                    with st.spinner('Guardando...'):
                         tarjetas_db[n_nombre] = {"tea": n_tea, "cierre": n_cierre, "pago": n_pago}
                         guardar_tarjetas_github(tarjetas_db)
-                    st.success("¡Tarjeta guardada permanentemente!")
+                    st.success("¡Tarjeta guardada!")
                     st.rerun()
                 else:
                     st.error("Ingrese un nombre.")
