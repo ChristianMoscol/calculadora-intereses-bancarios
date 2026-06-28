@@ -10,7 +10,7 @@ st.set_page_config(page_title="Calculadora Bancaria", page_icon="💳", layout="
 
 # --- SISTEMA DE SEGURIDAD Y NUBE ---
 CONTRASEÑA_SECRETA = "Kira2020"
-REPO_NAME = "ChristianMoscol/calculadora-intereses-bancarios" # <--- ¡CAMBIA ESTO POR TU USUARIO Y REPOSITORIO!
+REPO_NAME = "ChristianMoscol/calculadora-intereses-bancarios"
 
 def check_password():
     if "password_correct" not in st.session_state:
@@ -55,20 +55,30 @@ if check_password():
         except Exception:
             repo.create_file("config_tarjetas.json", "Crear config tarjetas", json.dumps(db, indent=4, ensure_ascii=False))
 
-    def guardar_historial_github(fecha, tarjeta, desc, monto, cuotas, diferido, total_int, total_pagar):
-        # Limpiamos comas en la descripción para no romper el formato CSV
+    # MODIFICADO: Ahora recibe la lista completa del cronograma y escribe fila por fila
+    def guardar_historial_github(fecha, tarjeta, desc, monto, cuotas, diferido, cronograma):
         desc_limpia = str(desc).replace(",", " ")
-        nueva_fila = f"{fecha},{tarjeta},{desc_limpia},{monto},{cuotas},{diferido},{total_int},{total_pagar}\n"
+        tarjeta_limpia = str(tarjeta).replace(",", " ")
+        
+        # Construimos el bloque de texto con todas las cuotas del cronograma
+        nuevas_filas = ""
+        for fila in cronograma:
+            nuevas_filas += (
+                f"{fecha},{tarjeta_limpia},{desc_limpia},{monto},{cuotas},{diferido},"
+                f"{fila['N°']},{fila['Fecha Pago']},{fila['Días']},{fila['Saldo Inicial']},"
+                f"{fila['Amortización']},{fila['Interés']},{fila['Cuota Total']},{fila['Saldo Final']}\n"
+            )
         
         try:
             contents = repo.get_contents("historial_calculos.csv")
             contenido_actual = contents.decoded_content.decode("utf-8")
-            nuevo_contenido = contenido_actual + nueva_fila
-            repo.update_file(contents.path, "Nuevo cálculo registrado", nuevo_contenido, contents.sha)
+            nuevo_contenido = contenido_actual + nuevas_filas
+            repo.update_file(contents.path, "Nuevo cronograma detallado registrado", nuevo_contenido, contents.sha)
         except Exception:
-            cabecera = "Fecha,Tarjeta,Descripcion,Monto,Cuotas,Diferido,Total_Intereses,Total_A_Pagar\n"
-            nuevo_contenido = cabecera + nueva_fila
-            repo.create_file("historial_calculos.csv", "Crear archivo historial", nuevo_contenido)
+            # Cabecera extendida con datos de auditoría individuales por cuota
+            cabecera = "ID_Calculo,Tarjeta,Descripcion_Compra,Monto_Total,Cuotas_Totales,Diferido_Totales,N_Cuota,Fecha_Pago,Dias,Saldo_Inicial,Amortizacion,Interes,Cuota_Total,Saldo_Final\n"
+            nuevo_contenido = cabecera + nuevas_filas
+            repo.create_file("historial_calculos.csv", "Crear archivo historial detallado", nuevo_contenido)
 
     tarjetas_db = cargar_tarjetas_github()
 
@@ -146,8 +156,6 @@ if check_password():
         return pdf.output(dest="S").encode("latin1")
 
     # --- INTERFAZ DE USUARIO (WEB) ---
-    st.title("🏦 Simulador de Intereses de Tarjeta de Crédito")
-
     with st.sidebar:
         st.header("⚙️ Configuración")
         if st.button("🚪 Cerrar Sesión"):
@@ -167,7 +175,7 @@ if check_password():
             bloqueado = True
 
         with st.expander("➕ Añadir / Editar Tarjeta"):
-            n_nombre = st.text_input("Nombre (Ej: BCP Juan)")
+            n_nombre = st.text_input("Nombre (Ej: BCP Kira)")
             n_tea = st.number_input("TEA (%)", min_value=0.0, format="%.2f", key="n_tea")
             n_cierre = st.number_input("Día de Cierre", min_value=1, max_value=31, step=1, key="n_cie")
             n_pago = st.number_input("Día de Pago", min_value=1, max_value=31, step=1, key="n_pag")
@@ -254,9 +262,10 @@ if check_password():
             df = pd.DataFrame(cronograma)
             
             # --- GUARDADO EN GITHUB EN SEGUNDO PLANO ---
-            with st.spinner("Sincronizando cálculo con la nube..."):
+            with st.spinner("Sincronizando cálculo detallado..."):
                 fecha_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, round(total_interes, 2), round(total_cuotas, 2))
+                # Enviamos el cronograma completo para que se desglose fila por fila
+                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, cronograma)
             
             st.success("✅ ¡Cálculo completado!")
             st.divider()
