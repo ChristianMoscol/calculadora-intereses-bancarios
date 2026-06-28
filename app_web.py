@@ -281,7 +281,7 @@ if check_password():
                 fecha_hora = fecha_hora_peru.strftime('%Y-%m-%d %H:%M:%S')
                 
                 # Enviamos el cronograma completo para que se desglose fila por fila con la hora de Perú
-                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, total_interes, cronograma)
+                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, cronograma)
             
             st.success("✅ ¡Cálculo completado!")
             st.divider()
