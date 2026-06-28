@@ -13,5 +13,10 @@
         "tea": 85.9,
         "cierre": 25,
         "pago": 22
+    },
+    "Diners Christian": {
+        "tea": 62.52,
+        "cierre": 18,
+        "pago": 5
     }
 }
