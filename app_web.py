@@ -263,8 +263,20 @@ if check_password():
             
             # --- GUARDADO EN GITHUB EN SEGUNDO PLANO ---
             with st.spinner("Sincronizando cálculo detallado..."):
-                fecha_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                # Enviamos el cronograma completo para que se desglose fila por fila
+                # --- CORRECCIÓN DE HUSO HORARIO (PERÚ - LIMA) ---
+                try:
+                    from zoneinfo import ZoneInfo
+                    zona_peru = ZoneInfo("America/Lima")
+                    fecha_hora_peru = datetime.now(zona_peru)
+                except Exception:
+                    # Alternativa en caso de entornos antiguos (Restar 5 horas manualmente de UTC)
+                    from datetime import timedelta, timezone
+                    zona_peru = timezone(timedelta(hours=-5))
+                    fecha_hora_peru = datetime.now(zona_peru)
+                
+                fecha_hora = fecha_hora_peru.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Enviamos el cronograma completo para que se desglose fila por fila con la hora de Perú
                 guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, cronograma)
             
             st.success("✅ ¡Cálculo completado!")
