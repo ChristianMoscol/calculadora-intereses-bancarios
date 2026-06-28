@@ -3,13 +3,14 @@ import pandas as pd
 from datetime import datetime
 from fpdf import FPDF
 import json
-import os
+from github import Github
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Calculadora Bancaria", page_icon="💳", layout="wide")
 
-# --- SISTEMA DE SEGURIDAD (SIN CUENTAS) ---
-CONTRASEÑA_SECRETA = "Kira2020"  # <--- CAMBIA ESTO POR TU CONTRASEÑA
+# --- SISTEMA DE SEGURIDAD Y NUBE ---
+CONTRASEÑA_SECRETA = "Kira2026"
+REPO_NAME = "ChristianMoscol/calculadora-intereses-bancarios" # <--- ¡CAMBIA ESTO POR TU USUARIO Y REPOSITORIO!
 
 def check_password():
     if "password_correct" not in st.session_state:
@@ -28,23 +29,50 @@ def check_password():
         return False
     return True
 
-# Si la contraseña es correcta, mostramos la app:
 if check_password():
-    ARCHIVO_TARJETAS = "config_tarjetas.json"
+    # --- CONEXIÓN A GITHUB API ---
+    try:
+        g = Github(st.secrets["GITHUB_TOKEN"])
+        repo = g.get_repo(REPO_NAME)
+    except Exception as e:
+        st.error(f"⚠️ Error conectando a GitHub. Revisa la línea 13 del código (REPO_NAME) y tu Token. Detalle: {e}")
+        st.stop()
+
     OPCION_MANUAL = "-- Ingreso Manual --"
 
-    def cargar_tarjetas():
-        if os.path.exists(ARCHIVO_TARJETAS):
-            with open(ARCHIVO_TARJETAS, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return {"Scotiabank Christian": {"tea": 69.99, "cierre": 4, "pago": 1}}
+    # --- FUNCIONES DE BASE DE DATOS EN LA NUBE (GITHUB) ---
+    def cargar_tarjetas_github():
+        try:
+            contents = repo.get_contents("config_tarjetas.json")
+            return json.loads(contents.decoded_content.decode("utf-8"))
+        except:
+            return {"Scotiabank Christian": {"tea": 69.99, "cierre": 4, "pago": 1}}
 
-    def guardar_tarjetas(db):
-        with open(ARCHIVO_TARJETAS, "w", encoding="utf-8") as f:
-            json.dump(db, f, indent=4, ensure_ascii=False)
+    def guardar_tarjetas_github(db):
+        try:
+            contents = repo.get_contents("config_tarjetas.json")
+            repo.update_file(contents.path, "Actualizar tarjetas desde Web", json.dumps(db, indent=4, ensure_ascii=False), contents.sha)
+        except Exception:
+            repo.create_file("config_tarjetas.json", "Crear config tarjetas", json.dumps(db, indent=4, ensure_ascii=False))
 
-    tarjetas_db = cargar_tarjetas()
+    def guardar_historial_github(fecha, tarjeta, desc, monto, cuotas, diferido, total_int, total_pagar):
+        # Limpiamos comas en la descripción para no romper el formato CSV
+        desc_limpia = str(desc).replace(",", " ")
+        nueva_fila = f"{fecha},{tarjeta},{desc_limpia},{monto},{cuotas},{diferido},{total_int},{total_pagar}\n"
+        
+        try:
+            contents = repo.get_contents("historial_calculos.csv")
+            contenido_actual = contents.decoded_content.decode("utf-8")
+            nuevo_contenido = contenido_actual + nueva_fila
+            repo.update_file(contents.path, "Nuevo cálculo registrado", nuevo_contenido, contents.sha)
+        except Exception:
+            cabecera = "Fecha,Tarjeta,Descripcion,Monto,Cuotas,Diferido,Total_Intereses,Total_A_Pagar\n"
+            nuevo_contenido = cabecera + nueva_fila
+            repo.create_file("historial_calculos.csv", "Crear archivo historial", nuevo_contenido)
 
+    tarjetas_db = cargar_tarjetas_github()
+
+    # --- LÓGICA MATEMÁTICA BANCARIA ---
     def calcular_fechas_pago(fecha_compra, dia_cierre, dia_pago, cuotas, diferido):
         if fecha_compra.day <= dia_cierre:
             m, y = fecha_compra.month, fecha_compra.year
@@ -117,6 +145,7 @@ if check_password():
         
         return pdf.output(dest="S").encode("latin1")
 
+    # --- INTERFAZ DE USUARIO (WEB) ---
     st.title("🏦 Simulador de Intereses de Tarjeta de Crédito")
 
     with st.sidebar:
@@ -142,11 +171,14 @@ if check_password():
             n_tea = st.number_input("TEA (%)", min_value=0.0, format="%.2f", key="n_tea")
             n_cierre = st.number_input("Día de Cierre", min_value=1, max_value=31, step=1, key="n_cie")
             n_pago = st.number_input("Día de Pago", min_value=1, max_value=31, step=1, key="n_pag")
-            if st.button("Guardar Tarjeta"):
+            
+            if st.button("💾 Guardar Tarjeta en la Nube"):
                 if n_nombre:
-                    tarjetas_db[n_nombre] = {"tea": n_tea, "cierre": n_cierre, "pago": n_pago}
-                    guardar_tarjetas(tarjetas_db)
-                    st.success("Guardado! Recarga la página.")
+                    with st.spinner('Guardando en GitHub...'):
+                        tarjetas_db[n_nombre] = {"tea": n_tea, "cierre": n_cierre, "pago": n_pago}
+                        guardar_tarjetas_github(tarjetas_db)
+                    st.success("¡Tarjeta guardada permanentemente!")
+                    st.rerun()
                 else:
                     st.error("Ingrese un nombre.")
 
@@ -166,7 +198,7 @@ if check_password():
         dia_cierre = c7.number_input("Día de Cierre", min_value=0, max_value=31, value=def_cierre, disabled=bloqueado)
         dia_pago = c8.number_input("Día de Pago", min_value=0, max_value=31, value=def_pago, disabled=bloqueado)
 
-        btn_calcular = st.form_submit_button("📊 Generar Cronograma", type="primary", use_container_width=True)
+        btn_calcular = st.form_submit_button("📊 Generar Cronograma y Guardar Historial", type="primary", use_container_width=True)
 
     if btn_calcular:
         if monto <= 0 or cuotas <= 0 or tea < 0 or dia_cierre <= 0 or dia_pago <= 0:
@@ -220,7 +252,15 @@ if check_password():
                 saldo = sf
 
             df = pd.DataFrame(cronograma)
+            
+            # --- GUARDADO EN GITHUB EN SEGUNDO PLANO ---
+            with st.spinner("Sincronizando cálculo con la nube..."):
+                fecha_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                guardar_historial_github(fecha_hora, tarjeta_sel, desc, monto, cuotas, diferido, round(total_interes, 2), round(total_cuotas, 2))
+            
+            st.success("✅ ¡Cálculo completado y registrado en el Historial de la Nube!")
             st.divider()
+            
             st.subheader("📋 Cronograma de Pagos")
             col1, col2, col3 = st.columns(3)
             col1.metric("Total de la Compra", f"S/ {monto:.2f}")
