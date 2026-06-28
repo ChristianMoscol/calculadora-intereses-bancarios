@@ -1,0 +1,17 @@
+{
+    "Scotiabank Christian": {
+        "tea": 69.99,
+        "cierre": 4,
+        "pago": 1
+    },
+    "BanBif": {
+        "tea": 82.0,
+        "cierre": 9,
+        "pago": 3
+    },
+    "BCP Christian": {
+        "tea": 85.9,
+        "cierre": 25,
+        "pago": 22
+    }
+}
